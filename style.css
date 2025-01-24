@@ -1,0 +1,27 @@
+@font-face {
+    font-family: 'DigitalFont';
+    src: url('/assets/fonts/digital-7.ttf') format('truetype');
+}
+body {
+    font-family: 'DigitalFont', sans-serif;
+}
+
+button {
+    aspect-ratio: 1/1;
+    width: 4rem;
+}
+.kalkulator {
+    box-shadow: 22px 25px 12px 7px rgba(0,0,0,0.64);
+-webkit-box-shadow: 22px 25px 12px 7px rgba(0,0,0,0.64);
+-moz-box-shadow: 22px 25px 12px 7px rgba(0,0,0,0.64);
+}
+
+@media (max-width: 767px) {
+    .kalkulator {
+        width: 20rem !important;
+        max-height: 30rem;
+    }
+    .tombol button{
+        max-height: 5rem !important;
+    }
+}
