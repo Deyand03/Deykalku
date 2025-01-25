@@ -19,9 +19,19 @@ button {
 @media (max-width: 767px) {
     .kalkulator {
         width: 20rem !important;
-        max-height: 30rem;
+        max-height: fit-content;
     }
     .tombol button{
         max-height: 5rem !important;
+        width: 3rem;
+    }
+    .tombol svg {
+        width: 25px !important;
+        height: 25px !important;
+    }
+}
+@media (max-width: 320px) {
+    .kalkulator {
+        width: 18rem !important;
     }
 }
