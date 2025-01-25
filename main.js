@@ -1,5 +1,6 @@
 const $ = (selector) => document.getElementById(selector);
 
+// Konfigurasi Kalkulator
 const calculator = {
     display: $('displayHasil'),
     displayHolder: $('placeHasil'),
@@ -8,16 +9,18 @@ const calculator = {
     rootMode: false
 };
 
+// Fungsi Utama Kalkulator
 function initCalculator() {
+    // Tambahkan event listener untuk angka
     const numberButtons = ['0', '00', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'koma'];
     numberButtons.forEach(btn => {
         $(btn).addEventListener('click', () => {
-            // Khusus mode akar, tambahkan angka setelah tanda akar
+            const value = btn === 'koma' ? '.' : btn;
             if (calculator.rootMode && calculator.display.value === '√') {
-                calculator.display.value += (btn === 'koma' ? '.' : btn);
+                calculator.display.value += value;
                 calculator.rootMode = false;
             } else {
-                addToDisplay(btn === 'koma' ? '.' : btn);
+                addToDisplay(value);
             }
         });
     });
@@ -35,7 +38,6 @@ function initCalculator() {
 
     // Event listener untuk akar
     $('akar').addEventListener('click', () => {
-        // Mode akar khusus
         calculator.rootMode = true;
         calculator.display.value = '√';
     });
@@ -50,108 +52,134 @@ function initCalculator() {
 
 // Fungsi Tambah ke Display
 function addToDisplay(value) {
-    // Mencegah multiple decimal points
-    if (value === '.' && calculator.display.value.includes('.')) return;
-    
-    calculator.display.value += value;
+    // Jika display kosong atau berisi "0", ganti dengan nilai baru
+    if (calculator.display.value === '0' && value !== '.') {
+        calculator.display.value = value;
+    } else {
+        calculator.display.value += value;
+    }
 }
 
 // Fungsi Tambah Operator
 function addOperator(operator) {
-    // Reset mode akar jika sedang aktif
     calculator.rootMode = false;
 
     // Jika display kosong, batalkan
     if (!calculator.display.value.trim()) return;
 
-    // Tambahkan angka dan operator ke ekspresi
+    // Tambahkan angka terakhir dan operator ke ekspresi
     calculator.currentExpression.push(calculator.display.value);
     calculator.currentExpression.push(operator);
 
     // Update display holder
     calculator.displayHolder.value = calculator.currentExpression.join(' ');
 
-    // Bersihkan display
+    // Bersihkan display untuk angka berikutnya
     calculator.display.value = '';
 }
 
 // Fungsi Evaluasi Ekspresi
 function evaluateExpression(expression) {
-    // Fungsi untuk menghitung akar
-    function calculateRoot(value) {
-        const numValue = parseFloat(value.replace('√', ''));
-        if (numValue < 0) throw new Error('Akar dari bilangan negatif tidak valid');
-        return Math.sqrt(numValue);
-    }
+    const precedence = { '√': 3, '✕': 2, '÷': 2, '+': 1, '-': 1 };
+    const values = [];
+    const operators = [];
 
-    // Fungsi untuk menghitung operasi
-    function calculateOperation(left, operator, right) {
-        const leftNum = parseFloat(left);
-        const rightNum = parseFloat(right);
-
-        switch (operator) {
-            case '+': return leftNum + rightNum;
-            case '-': return leftNum - rightNum;
-            case '✕': return leftNum * rightNum;
-            case '÷': 
-                if (rightNum === 0) throw new Error('Pembagian dengan nol');
-                return leftNum / rightNum;
-        }
-    }
-
-    // Proses ekspresi
-    let result = null;
-    let currentOperator = null;
-
-    for (let i = 0; i < expression.length; i++) {
-        const token = expression[i];
-
-        // Jika token mengandung akar
-        if (token.includes('√')) {
-            const rootValue = calculateRoot(token);
-            
-            // Jika sudah ada operasi sebelumnya
-            if (result !== null && currentOperator) {
-                result = calculateOperation(result, currentOperator, rootValue);
-                currentOperator = null;
-            } else {
-                result = rootValue;
+    for (let token of expression) {
+        // Jika token adalah angka, masukkan ke stack nilai
+        if (!isNaN(token)) {
+            values.push(parseFloat(token));
+        } 
+        // Jika token adalah akar
+        else if (token.startsWith('√')) {
+            const numValue = parseFloat(token.slice(1)); // Ambil angka setelah √
+            if (isNaN(numValue) || numValue < 0) {
+                throw new Error('Akar bilangan negatif tidak valid');
             }
+            values.push(Math.sqrt(numValue));
         } 
         // Jika token adalah operator
         else if (calculator.operators.includes(token)) {
-            currentOperator = token;
-        } 
-        else {
-            // Jika sudah ada operasi sebelumnya
-            if (result !== null && currentOperator) {
-                result = calculateOperation(result, currentOperator, token);
-                currentOperator = null;
-            } else if (result === null) {
-                result = parseFloat(token);
+            while (
+                operators.length > 0 &&
+                precedence[operators[operators.length - 1]] >= precedence[token]
+            ) {
+                const right = values.pop();
+                const left = values.pop();
+                const op = operators.pop();
+                values.push(performOperation(left, op, right));
             }
+            operators.push(token);
         }
     }
 
-    return result;
+    // Proses sisa operator
+    while (operators.length > 0) {
+        const right = values.pop();
+        const left = values.pop();
+        const op = operators.pop();
+        values.push(performOperation(left, op, right));
+    }
+
+    return values[0];
 }
 
+// Fungsi Tambah Operator
+function addOperator(operator) {
+    calculator.rootMode = false;
+
+    if (calculator.display.value.trim()) {
+        // Jika operator adalah akar, tambahkan simbol √ di depan angka
+        if (operator === '√' && !calculator.display.value.includes('√')) {
+            calculator.currentExpression.push(`√${calculator.display.value}`);
+        } else {
+            calculator.currentExpression.push(calculator.display.value);
+            calculator.currentExpression.push(operator);
+        }
+    }
+
+    calculator.displayHolder.value = calculator.currentExpression.join(' ');
+    calculator.display.value = '';
+}
+
+// Fungsi Akar
+$('akar').addEventListener('click', () => {
+    // Jika display kosong, langsung masukkan simbol akar
+    if (!calculator.display.value.trim()) {
+        calculator.display.value = '√';
+    } else {
+        // Jika sudah ada angka, tambahkan akar
+        calculator.display.value = `√${calculator.display.value}`;
+    }
+    calculator.rootMode = true;
+});
+
+// Fungsi untuk Melakukan Operasi
+function performOperation(left, operator, right) {
+    switch (operator) {
+        case '+': return left + right;
+        case '-': return left - right;
+        case '✕': return left * right;
+        case '÷': 
+            if (right === 0) throw new Error('Pembagian dengan nol');
+            return left / right;
+        default: throw new Error('Operator tidak valid');
+    }
+}
+
+// Fungsi Hitung Hasil
 function calculateResult() {
     try {
         calculator.rootMode = false;
 
+        // Tambahkan angka terakhir ke ekspresi jika belum ada
         if (calculator.display.value.trim()) {
-            // Khusus untuk mode akar
-            if (calculator.display.value.startsWith('√')) {
-                calculator.currentExpression.push(calculator.display.value);
-            } else {
-                calculator.currentExpression.push(calculator.display.value);
-            }
+            calculator.currentExpression.push(calculator.display.value);
         }
-        let result = evaluateExpression(calculator.currentExpression);
 
-        calculator.display.value = result.toString().replace(/\.?0+$/, '');
+        const result = evaluateExpression(calculator.currentExpression);
+        calculator.display.value = result.toString();
         calculator.displayHolder.value = calculator.currentExpression.join(' ') + ' =';
+
         calculator.currentExpression = [];
     } catch (error) {
         calculator.display.value = 'Error';
@@ -159,6 +187,7 @@ function calculateResult() {
     }
 }
 
+// Fungsi Hapus Karakter Terakhir
 function deleteLastCharacter() {
     if (calculator.display.value === '√') {
         calculator.rootMode = false;
@@ -168,6 +197,7 @@ function deleteLastCharacter() {
     }
 }
 
+// Fungsi Hapus Semua
 function clearAll() {
     calculator.display.value = '';
     calculator.displayHolder.value = '';
@@ -175,4 +205,5 @@ function clearAll() {
     calculator.rootMode = false;
 }
 
+// Inisialisasi Kalkulator
 initCalculator();
