@@ -1,6 +1,5 @@
 const $ = (selector) => document.getElementById(selector);
 
-// Konfigurasi Kalkulator
 const calculator = {
     display: $('displayHasil'),
     displayHolder: $('placeHasil'),
@@ -9,9 +8,7 @@ const calculator = {
     rootMode: false
 };
 
-// Fungsi Utama Kalkulator
 function initCalculator() {
-    // Tambahkan event listener untuk angka
     const numberButtons = ['0', '00', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'koma'];
     numberButtons.forEach(btn => {
         $(btn).addEventListener('click', () => {
@@ -25,7 +22,6 @@ function initCalculator() {
         });
     });
 
-    // Tambahkan event listener untuk operator
     const operatorButtons = [
         { id: 'tambah', symbol: '+' },
         { id: 'kurang', symbol: '-' },
@@ -36,23 +32,19 @@ function initCalculator() {
         $(op.id).addEventListener('click', () => addOperator(op.symbol));
     });
 
-    // Event listener untuk akar
     $('akar').addEventListener('click', () => {
         calculator.rootMode = true;
         calculator.display.value = '√';
     });
 
-    // Event listener untuk tombol hasil
     $('hasil').addEventListener('click', calculateResult);
 
-    // Event listener untuk tombol hapus
     $('delete').addEventListener('click', deleteLastCharacter);
     $('deleteAll').addEventListener('click', clearAll);
 }
 
 // Fungsi Tambah ke Display
 function addToDisplay(value) {
-    // Jika display kosong atau berisi "0", ganti dengan nilai baru
     if (calculator.display.value === '0' && value !== '.') {
         calculator.display.value = value;
     } else {
@@ -64,17 +56,12 @@ function addToDisplay(value) {
 function addOperator(operator) {
     calculator.rootMode = false;
 
-    // Jika display kosong, batalkan
     if (!calculator.display.value.trim()) return;
 
-    // Tambahkan angka terakhir dan operator ke ekspresi
     calculator.currentExpression.push(calculator.display.value);
     calculator.currentExpression.push(operator);
 
-    // Update display holder
     calculator.displayHolder.value = calculator.currentExpression.join(' ');
-
-    // Bersihkan display untuk angka berikutnya
     calculator.display.value = '';
 }
 
@@ -97,7 +84,6 @@ function evaluateExpression(expression) {
             }
             values.push(Math.sqrt(numValue));
         } 
-        // Jika token adalah operator
         else if (calculator.operators.includes(token)) {
             while (
                 operators.length > 0 &&
@@ -112,7 +98,6 @@ function evaluateExpression(expression) {
         }
     }
 
-    // Proses sisa operator
     while (operators.length > 0) {
         const right = values.pop();
         const left = values.pop();
@@ -128,7 +113,6 @@ function addOperator(operator) {
     calculator.rootMode = false;
 
     if (calculator.display.value.trim()) {
-        // Jika operator adalah akar, tambahkan simbol √ di depan angka
         if (operator === '√' && !calculator.display.value.includes('√')) {
             calculator.currentExpression.push(`√${calculator.display.value}`);
         } else {
@@ -143,11 +127,9 @@ function addOperator(operator) {
 
 // Fungsi Akar
 $('akar').addEventListener('click', () => {
-    // Jika display kosong, langsung masukkan simbol akar
     if (!calculator.display.value.trim()) {
         calculator.display.value = '√';
     } else {
-        // Jika sudah ada angka, tambahkan akar
         calculator.display.value = `√${calculator.display.value}`;
     }
     calculator.rootMode = true;
@@ -170,8 +152,6 @@ function performOperation(left, operator, right) {
 function calculateResult() {
     try {
         calculator.rootMode = false;
-
-        // Tambahkan angka terakhir ke ekspresi jika belum ada
         if (calculator.display.value.trim()) {
             calculator.currentExpression.push(calculator.display.value);
         }
